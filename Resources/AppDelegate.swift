@@ -1,8 +1,8 @@
 //
 //  AppDelegate.swift
-//  MovieSearch_Gavin
+//  MovieSearch_2.0
 //
-//  Created by Gavin Woffinden on 5/7/21.
+//  Created by Gavin Woffinden on 5/9/21.
 //
 
 import UIKit

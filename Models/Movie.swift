@@ -1,21 +1,37 @@
 //
 //  Movie.swift
-//  MovieSearch_Gavin
+//  MovieSearch_2.0
 //
-//  Created by Gavin Woffinden on 5/7/21.
+//  Created by Gavin Woffinden on 5/9/21.
 //
-
-//24701c2db5555d999cf147b3445a971e
 
 import Foundation
+import UIKit
 
-struct MovieTopLevelObject: Codable {
-    let results: Movie
+struct MovieTopLevel: Decodable {
+    
+    let results: [Movie]
 
-struct Movie: Codable {
+}
+
+
+struct Movie: Decodable {
     let title: String
-    let overview: String
-    let vote_average: Double
-    let poster_path: URL?
+    let description: String
+    let posterURL: String?
+    let rating: Double
+    
+    enum CodingKeys: String, CodingKey {
+        case title = "title"
+        case description = "overview"
+        case posterURL = "poster_path"
+        case rating = "vote_average"
+        
     }
 }
+// I JUST DONT KNOW WHERE IM GOING WRONG
+
+
+
+
+// gosh dang

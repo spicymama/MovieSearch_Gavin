@@ -1,68 +1,91 @@
 //
 //  MovieController.swift
-//  MovieSearch_Gavin
+//  MovieSearch_2.0
 //
-//  Created by Gavin Woffinden on 5/7/21.
+//  Created by Gavin Woffinden on 5/9/21.
 //
 
 import UIKit
 
 class MovieController {
     
-    static let baseURL = URL(string: "https://api.themoviedb.org/3/movie/")
-    static let apiKeyKey = "api_key="
+   //https://api.themoviedb.org/3/search/movie/?api_key=24701c2db5555d999cf147b3445a971e&query=jaws
+    
+    
+    //MARK: -  String Constants
+    static let baseURL = URL(string: "https://api.themoviedb.org/3/search/movie")
+    static let apiKeyKey = "api_key"
     static let apiKeyValue = "24701c2db5555d999cf147b3445a971e"
-    static let movieID = "550"
+    static let queryComponent = "query"
+    static let posterImageURL = URL(string: "https://image.tmdb.org/t/p/w500")
     
-    
-    static func fetchMovies(completion: @escaping (Result<MovieTopLevelObject, NetworkError>) -> Void) {
+    //MARK: - Functions
+    static func fetchMovies(searchTerm: String, completion: @escaping (Result<[Movie], NetworkError>)-> Void) {
         
-        guard let baseURL = baseURL else {return}
-        let movieURL = baseURL.appendingPathComponent(movieID)
-        
-        var components = URLComponents(url: movieURL, resolvingAgainstBaseURL: true)
+        guard let baseURL = baseURL else {return completion(.failure(.invalidURL))}
+       
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: true)
         let apiQuery = URLQueryItem(name: apiKeyKey, value: apiKeyValue)
-        components?.queryItems = [apiQuery]
-
-        guard let finalURL = components?.url else {return completion(.failure(.invalidURL))}
-        print(finalURL)
+        let searchQuery = URLQueryItem(name: queryComponent, value: searchTerm)
+        components?.queryItems = [apiQuery, searchQuery]
         
-        URLSession.shared.dataTask(with: finalURL) { (data, response, error) in
+        guard let finalURL = components?.url else {return completion(.failure(.invalidURL))}
+        
+      //  var components2 = URLComponents(url: searchURL, resolvingAgainstBaseURL: true)
+      //  let searchQuery = URLQueryItem(name: queryComponent, value: searchTerm)
+      //  components2?.queryItems = [searchQuery]
+        
+      //  guard let finalURL = components2?.url else {return completion(.failure(.invalidURL))}
+        
+        
+        print(finalURL)
+
+        URLSession.shared.dataTask(with: finalURL) { data, response, error in
             if let error = error {
-                return completion(.failure(.thrownError(error)))
-            }
-            if let response = response as? HTTPURLResponse {
-                print("MOVIE STATUS CODE: \(response.statusCode)")
-            }
-            guard let data = data else {return completion(.failure(.noData))}
-            
-            do{
-                let movie = try JSONDecoder().decode(MovieTopLevelObject.self, from: data)
-                
-                completion(.success(movie))
-                
-            } catch {
                 completion(.failure(.thrownError(error)))
             }
-        }.resume()
-    }
-    
-    static func fetchMoviePoster(for movie: MovieTopLevelObject, completion: @escaping (Result<UIImage, NetworkError>)-> Void) {
-        guard let url = movie.results.poster_path else {return}
-        
-        URLSession.shared.dataTask(with: url) { (data, response, error) in
             
-            if let error = error {
-                return completion(.failure(.thrownError(error)))
-            }
             if let response = response as? HTTPURLResponse {
                 print("MOVIE STATUS CODE: \(response.statusCode)")
             }
             guard let data = data else {return completion(.failure(.noData))}
             
-            guard let poster_path = UIImage(data: data) else {return completion(.failure(.unableToDecode))}
-            completion(.success(poster_path))
-            
+            do {
+                let movieTop = try JSONDecoder().decode(MovieTopLevel.self, from: data)
+                let movieDetails = movieTop.results
+               
+                completion(.success(movieDetails))
+                
+            } catch {
+                completion(.failure(.unableToDecode))
+            }
         }.resume()
     }
-}
+    
+    static func fetchPoster(for movie: Movie, completion: @escaping (Result<UIImage, NetworkError>)-> Void) {
+        
+        //guard let imageURL = URL(string: movie.posterURL) else {return}
+        
+        guard let posterImageURL = posterImageURL else {return completion(.failure(.invalidURL))}
+        print(posterImageURL)
+        guard let poster = movie.posterURL else {return}
+        let imageURL = posterImageURL.appendingPathComponent(poster)
+        print(imageURL)
+        
+        URLSession.shared.dataTask(with: imageURL) { (data, response, error) in
+            
+            if let error = error {
+                return completion(.failure(.thrownError(error)))
+            }
+            
+            if let response = response as? HTTPURLResponse {
+                print("POSTER STATUS CODE: \(response.statusCode)")
+            }
+            
+            guard let data = data else {return completion(.failure(.noData))}
+            
+            guard let poster = UIImage(data: data) else {return completion(.failure(.unableToDecode))}
+            completion(.success(poster))
+        }.resume()
+    }
+}//End of class

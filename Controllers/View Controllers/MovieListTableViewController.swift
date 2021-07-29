@@ -1,70 +1,85 @@
 //
 //  MovieListTableViewController.swift
-//  MovieSearch_Gavin
+//  MovieSearch_2.0
 //
-//  Created by Gavin Woffinden on 5/7/21.
+//  Created by Gavin Woffinden on 5/9/21.
 //
+
 
 import UIKit
 
-class MovieListTableViewController: UITableViewController {
 
-  
+// I only had to fix one word, so I hope it's ok I didn't remake the whole project for my third attempt...
+
+
+
+class MovieListTableViewController: UITableViewController {
+    
     @IBOutlet weak var searchBar: UISearchBar!
+
     
-    
-    //MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        searchBar.delegate = self
         
     }
+    
+    var movies: [Movie] = []
+    var movie: Movie?
+    //MARK: -  Functions
+    func fetchMoviesForTableview() {
+        MovieController.fetchMovies(searchTerm: String()) { (result) in
+        
+            
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let movie):
+                    self.movies = movie
+                    self.tableView.reloadData()
+                case .failure(let error):
+                     print("Error in \(#function) : \(error.localizedDescription) \n---\n \(error)")
+                }
+            }
+        }
+    }
 
-    
-    
     // MARK: - Table view data source
 
-    var movies: MovieTopLevelObject?
-    
-    
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return movies?.results.title.count ?? 0
+        return movies.count
     }
 
-    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "movieCell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "movieCell", for: indexPath) as? MovieTableViewCell
+        let movie = movies[indexPath.row]
+        cell?.movie = movie
 
 
-        return cell
+        return cell ?? MovieTableViewCell()
     }
-    
-/*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return view.frame.height/6
     }
-    */
 
 }
+
 extension MovieListTableViewController: UISearchBarDelegate {
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         guard let searchTerm = searchBar.text, !searchTerm.isEmpty else {return}
         
-        MovieController.fetchMovies(){ (result) in
+        MovieController.fetchMovies(searchTerm: searchTerm.lowercased()) { (result) in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let movie):
+                   // self.fetchMoviesForTableview()
                     self.movies = movie
+                    self.tableView.reloadData()
                 case .failure(let error):
                      print("Error in \(#function) : \(error.localizedDescription) \n---\n \(error)")
+                }
             }
-            
         }
     }
-}
 }
